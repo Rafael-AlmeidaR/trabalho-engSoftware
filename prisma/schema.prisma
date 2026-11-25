@@ -1,0 +1,75 @@
+// Planta's Clothing — modelo de dados (PostgreSQL / Neon)
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+  importFileExtension = ""
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Perfil {
+  CLIENTE
+  VENDEDOR
+  DONO
+}
+
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  nome      String
+  email     String   @unique
+  senhaHash String
+  telefone  String?
+  endereco  String?
+  perfil    Perfil   @default(CLIENTE)
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now())
+  pedidos   Pedido[]
+}
+
+model Produto {
+  id        Int        @id @default(autoincrement())
+  nome      String
+  descricao String?
+  categoria String
+  preco     Decimal    @db.Decimal(10, 2)
+  fotoUrl   String?
+  ativo     Boolean    @default(true)
+  criadoEm  DateTime   @default(now())
+  variacoes Variacao[]
+}
+
+model Variacao {
+  id        Int          @id @default(autoincrement())
+  produtoId Int
+  produto   Produto      @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  tamanho   String
+  cor       String
+  estoque   Int          @default(0)
+  itens     PedidoItem[]
+
+  @@unique([produtoId, tamanho, cor])
+}
+
+model Pedido {
+  id        Int          @id @default(autoincrement())
+  usuarioId Int
+  usuario   Usuario      @relation(fields: [usuarioId], references: [id])
+  total     Decimal      @db.Decimal(10, 2)
+  criadoEm  DateTime     @default(now())
+  itens     PedidoItem[]
+
+  @@index([criadoEm])
+}
+
+model PedidoItem {
+  id            Int      @id @default(autoincrement())
+  pedidoId      Int
+  pedido        Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  variacaoId    Int
+  variacao      Variacao @relation(fields: [variacaoId], references: [id])
+  quantidade    Int
+  precoUnitario Decimal  @db.Decimal(10, 2)
+}
